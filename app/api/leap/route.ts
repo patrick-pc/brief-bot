@@ -1,5 +1,7 @@
 import { Leap } from "@leap-ai/workflows";
 
+export const runtime = "node";
+
 export async function POST(req: Request) {
   const json = await req.json();
   const { url, painPoints } = json;
@@ -30,7 +32,7 @@ export async function POST(req: Request) {
     status = statusCheck.data.status;
 
     console.log("### status", status);
-    await new Promise((resolve) => setTimeout(resolve, 10000)); // wait for 10 seconds before checking again
+    await new Promise((resolve) => setTimeout(resolve, 5000)); // wait for 5 seconds before checking again
   }
 
   const result = await leap.workflowRuns.getWorkflowRun({
