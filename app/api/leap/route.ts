@@ -1,7 +1,5 @@
 import { Leap } from "@leap-ai/workflows";
 
-export const runtime = "node";
-
 export async function POST(req: Request) {
   const json = await req.json();
   const { url, painPoints } = json;
