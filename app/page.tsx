@@ -117,9 +117,9 @@ export default function Home() {
           />
 
           <button
-            className="flex h-9 w-full rounded-md bg-zinc-800 items-center justify-center text-zinc-100"
+            className="flex h-9 w-full rounded-md bg-zinc-800 items-center justify-center text-zinc-100 disabled:bg-zinc-900"
             onClick={generateReport}
-            disabled={loading}
+            disabled={loading || !url}
           >
             {loading ? (
               <svg
