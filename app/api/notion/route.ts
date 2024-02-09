@@ -5,10 +5,6 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY });
 export async function POST(req: Request) {
   const { images, company, briefBot } = await req.json();
 
-  console.log("### images", images);
-  console.log("### company", company);
-  console.log("### briefBot", briefBot);
-
   const response = await notion.pages.create({
     parent: {
       type: "page_id",
@@ -59,7 +55,6 @@ export async function POST(req: Request) {
       },
     ],
   });
-  console.log(response);
 
   return new Response(JSON.stringify(response));
 }

@@ -7,13 +7,9 @@ const leap = new Leap({
 export async function POST(req: Request) {
   const { workflowRunId } = await req.json();
 
-  console.log("### workflowRunId", workflowRunId);
-
   const response = await leap.workflowRuns.getWorkflowRun({
     workflowRunId,
   });
-
-  console.log("### response.data", response.data);
 
   return new Response(JSON.stringify(response.data));
 }

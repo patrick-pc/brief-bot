@@ -1,12 +1,9 @@
 import { OpenAIStream, StreamingTextResponse } from "ai";
 import OpenAI from "openai";
-import { Client } from "@notionhq/client";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || "",
 });
-
-const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 export const runtime = "edge";
 

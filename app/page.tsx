@@ -1,122 +1,153 @@
 "use client";
 
+import { Message } from "ai";
+import { useChat } from "ai/react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
-import { useState, useRef } from "react";
-
-import { useChat } from "ai/react";
-import { Message } from "ai";
+import toast from "react-hot-toast";
 
 export default function Home() {
   const [url, setUrl] = useState("");
   const [painPoints, setPainPoints] = useState("");
-  // const [report, setReport] = useState({} as any);
   const [image, setImage] = useState();
   const [loading, setLoading] = useState(false);
   const reportRef = useRef() as any;
 
   const { messages, input, handleInputChange, handleSubmit, append } = useChat({
     onFinish: async (message: Message) => {
-      console.log("@@@ message", message);
       await saveToNotion(message.content);
     },
   });
 
   const generateReport = async () => {
-    setLoading(true);
-    const response = await fetch("/api/leap/run", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        url: url,
-        painPoints: painPoints,
-      }),
-    });
+    // Input validation
+    if (!url) {
+      toast.error("URL is required");
+      return;
+    }
 
-    const data = await response.json();
-    console.log("@@@ data", data);
+    if (!painPoints) {
+      toast.error("Pain Points is required");
+      return;
+    }
 
-    let status;
-    let workflow;
+    try {
+      setLoading(true);
 
-    while (status !== "completed") {
-      const response = await fetch("/api/leap/retrieve", {
+      let response = await fetch("/api/leap/run", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url, painPoints }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Error starting report: ${response.status} - ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("@@@ data", data);
+
+      let status = "";
+      let workflow;
+
+      // Polling for report completion
+      while (status !== "completed") {
+        response = await fetch("/api/leap/retrieve", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ workflowRunId: data.id }),
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Error retrieving report: ${response.status} - ${response.statusText}`
+          );
+        }
+
+        workflow = await response.json();
+        status = workflow.status;
+        console.log("@@@ status", status);
+
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
+
+      console.log("@@@ workflow", workflow);
+
+      setImage(workflow.output.images);
+
+      reportRef.current = {
+        images: workflow.output.images,
+        company: workflow.output.company,
+      };
+
+      append({
+        role: "user",
+        content: `Client Data (Scraped Website Data):
+  ${workflow.output.site_data}
+  
+  Client News results:
+  ${JSON.stringify(workflow.output.news_results)}
+  
+  Client Pain Points:
+  ${painPoints}`,
+      });
+    } catch (error) {
+      console.error("Failed to generate report:", error);
+      toast.error("Failed to generate report. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveToNotion = async (brief: any) => {
+    try {
+      const response = await fetch("/api/notion", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          workflowRunId: data.id,
+          company: reportRef.current.company,
+          images: reportRef.current.images,
+          briefBot: brief,
         }),
       });
 
-      workflow = await response.json();
-      status = workflow.status;
-      console.log("@@@ status", status);
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} - ${response.statusText}`);
+      }
 
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      const data = await response.json();
+      console.log("@@@ data", data);
+
+      toast.success("Brief has been saved to Notion");
+    } catch (error) {
+      console.error("Error saving to Notion:", error);
+      toast.error("Failed to save brief to Notion. Please try again.");
     }
-
-    console.log("@@@ workflow", workflow);
-
-    setImage(workflow.output.images);
-
-    reportRef.current = {
-      images: workflow.output.images,
-      company: workflow.output.company,
-    };
-
-    append({
-      role: "user",
-      content: `Client Data (Scraped Website Data):
-${workflow.output.site_data}
-
-Client News results:
-${JSON.stringify(workflow.output.news_results)}
-
-Client Pain Points:
-${painPoints}`,
-    });
-
-    setLoading(false);
-  };
-
-  const saveToNotion = async (brief: any) => {
-    console.log("@@@ reportRef", reportRef.current);
-
-    const response = await fetch("/api/notion", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        company: reportRef.current.company,
-        images: reportRef.current.images,
-        briefBot: brief,
-      }),
-    });
-
-    const data = await response.json();
-    console.log(data);
   };
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex items-center justify-between w-full h-16 px-4 border-b-[0.5px] border-zinc-800 shrink-0 bg-gradient-to-b from-background/10 via-background/50 to-background/80 backdrop-blur-xl">
+      <nav className="sticky top-0 z-50 flex items-center justify-between w-full h-16 px-4 border-b-[0.5px] border-zinc-800 shrink-0 bg-gradient-to-b from-background/10 via-background/50 to-background/80 backdrop-blur-xl">
         <div className="flex items-center">
           <Link
             href="https://www.signalandcipher.com/"
             target="_blank"
             rel="nofollow"
           >
-            <Image
+            <img
               src="https://framerusercontent.com/images/JGs8WFixcVVZert7GnE0iXO9CI.svg"
               alt="Signal & Cipher"
-              width={40}
-              height={40}
+              className="h-8 w-auto"
             />
           </Link>
         </div>
@@ -126,7 +157,7 @@ ${painPoints}`,
             target="_blank"
             rel="nofollow"
           >
-            <div className="text-sm w-48 text-right underline flex items-center justify-center gap-1">
+            <div className="text-sm w-48 text-right underline flex items-center justify-end gap-1">
               Notion Page
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -145,7 +176,7 @@ ${painPoints}`,
             </div>
           </Link>
         </div>
-      </header>
+      </nav>
 
       <main className="flex flex-col items-center justify-between px-6 py-24">
         {!image && (
@@ -168,7 +199,7 @@ ${painPoints}`,
             <button
               className="flex h-9 w-full rounded-md bg-zinc-700 items-center justify-center text-zinc-100 font-medium disabled:bg-zinc-800 disabled:cursor-not-allowed"
               onClick={generateReport}
-              disabled={loading || !url}
+              disabled={loading}
             >
               {loading ? (
                 <svg
