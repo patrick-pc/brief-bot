@@ -85,7 +85,6 @@ ${painPoints}`,
   };
 
   const saveToNotion = async (brief: any) => {
-    console.log("@@@ report", report);
     console.log("@@@ reportRef", reportRef.current);
 
     const response = await fetch("/api/notion", {
