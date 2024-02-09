@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 import { useChat } from "ai/react";
 import { Message } from "ai";
@@ -11,8 +11,10 @@ import { Message } from "ai";
 export default function Home() {
   const [url, setUrl] = useState("");
   const [painPoints, setPainPoints] = useState("");
-  const [report, setReport] = useState({} as any);
+  // const [report, setReport] = useState({} as any);
+  const [image, setImage] = useState();
   const [loading, setLoading] = useState(false);
+  const reportRef = useRef() as any;
 
   const { messages, input, handleInputChange, handleSubmit, append } = useChat({
     onFinish: async (message: Message) => {
@@ -23,7 +25,7 @@ export default function Home() {
 
   const generateReport = async () => {
     setLoading(true);
-    const response = await fetch("/api/leap", {
+    const response = await fetch("/api/leap/run", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -35,36 +37,56 @@ export default function Home() {
     });
 
     const data = await response.json();
-    console.log(data);
-    setReport({
-      images: data.output.images,
-      siteData: data.output.site_data,
-      newsResults: data.output.news_results,
-      company: data.output.company,
-    });
+    console.log("@@@ data", data);
 
-    console.log("report", report);
+    let status;
+    let workflow;
+
+    while (status !== "completed") {
+      const response = await fetch("/api/leap/retrieve", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          workflowRunId: data.id,
+        }),
+      });
+
+      workflow = await response.json();
+      status = workflow.status;
+      console.log("@@@ status", status);
+
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+
+    console.log("@@@ workflow", workflow);
+
+    setImage(workflow.output.images);
+
+    reportRef.current = {
+      images: workflow.output.images,
+      company: workflow.output.company,
+    };
 
     append({
       role: "user",
       content: `Client Data (Scraped Website Data):
-${data.output.site_data}
+${workflow.output.site_data}
 
 Client News results:
-${JSON.stringify(data.output.news_results)}
+${JSON.stringify(workflow.output.news_results)}
 
 Client Pain Points:
-${painPoints}
-`,
+${painPoints}`,
     });
 
     setLoading(false);
-
-    // await saveToNotion(data.output);
   };
 
   const saveToNotion = async (brief: any) => {
     console.log("@@@ report", report);
+    console.log("@@@ reportRef", reportRef.current);
 
     const response = await fetch("/api/notion", {
       method: "POST",
@@ -72,8 +94,8 @@ ${painPoints}
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        company: report.company,
-        images: report.images,
+        company: reportRef.current.company,
+        images: reportRef.current.images,
         briefBot: brief,
       }),
     });
@@ -179,9 +201,9 @@ ${painPoints}
         </div>
 
         <div className="flex flex-col items-center justify-center gap-8 pt-16">
-          {report.images && (
+          {image && (
             <img
-              src={report.images}
+              src={image}
               alt="Company Logo"
               className="h-80 object-cover rounded-md"
             />
@@ -194,13 +216,13 @@ ${painPoints}
                   {m.content}
                 </ReactMarkdown>
 
-                <button
+                {/* <button
                   onClick={async () => {
                     await saveToNotion(messages[0].content);
                   }}
                 >
                   Save To Notion
-                </button>
+                </button> */}
               </div>
             ))}
 
