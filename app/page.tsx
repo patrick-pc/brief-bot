@@ -5,11 +5,21 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { useState } from "react";
 
+import { useChat } from "ai/react";
+import { Message } from "ai";
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [painPoints, setPainPoints] = useState("");
   const [report, setReport] = useState({} as any);
   const [loading, setLoading] = useState(false);
+
+  const { messages, input, handleInputChange, handleSubmit, append } = useChat({
+    onFinish: async (message: Message) => {
+      console.log("@@@ message", message);
+      await saveToNotion(message.content);
+    },
+  });
 
   const generateReport = async () => {
     setLoading(true);
@@ -28,26 +38,43 @@ export default function Home() {
     console.log(data);
     setReport({
       images: data.output.images,
-      briefBot: data.output.brief_bot,
-      swotAnalysis: data.output.swot_analysis,
+      siteData: data.output.site_data,
+      newsResults: data.output.news_results,
       company: data.output.company,
     });
+
+    console.log("report", report);
+
+    append({
+      role: "user",
+      content: `Client Data (Scraped Website Data):
+${data.output.site_data}
+
+Client News results:
+${JSON.stringify(data.output.news_results)}
+
+Client Pain Points:
+${painPoints}
+`,
+    });
+
     setLoading(false);
 
-    await saveToNotion(data.output);
+    // await saveToNotion(data.output);
   };
 
-  const saveToNotion = async (output: any) => {
+  const saveToNotion = async (brief: any) => {
+    console.log("@@@ report", report);
+
     const response = await fetch("/api/notion", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        company: output.company,
-        images: output.images,
-        briefBot: output.brief_bot,
-        swotAnalysis: output.swot_analysis,
+        company: report.company,
+        images: report.images,
+        briefBot: brief,
       }),
     });
 
@@ -117,7 +144,7 @@ export default function Home() {
           />
 
           <button
-            className="flex h-9 w-full rounded-md bg-zinc-800 items-center justify-center text-zinc-100 disabled:bg-zinc-900"
+            className="flex h-9 w-full rounded-md bg-zinc-700 items-center justify-center text-zinc-100 font-medium disabled:bg-zinc-800 disabled:cursor-not-allowed"
             onClick={generateReport}
             disabled={loading || !url}
           >
@@ -146,32 +173,46 @@ export default function Home() {
                 </g>
               </svg>
             ) : (
-              "Generate Report"
+              "Generate Brief"
             )}
           </button>
         </div>
 
-        {report.images && report.briefBot && report.swotAnalysis && (
-          <div className="flex flex-col items-center justify-center gap-8 pt-16">
+        <div className="flex flex-col items-center justify-center gap-8 pt-16">
+          {report.images && (
             <img
               src={report.images}
-              alt="report image"
+              alt="Company Logo"
               className="h-80 object-cover rounded-md"
             />
+          )}
 
-            <div className="w-full max-w-4xl">
-              <ReactMarkdown className="space-y-6 break-words">
-                {report.briefBot}
-              </ReactMarkdown>
-            </div>
+          {messages &&
+            messages.slice(1).map((m) => (
+              <div className="w-full max-w-4xl" key={m.id}>
+                <ReactMarkdown className="space-y-6 break-words">
+                  {m.content}
+                </ReactMarkdown>
 
-            <div className="w-full max-w-4xl">
-              <ReactMarkdown className="space-y-6 break-words">
-                {report.swotAnalysis}
-              </ReactMarkdown>
-            </div>
-          </div>
-        )}
+                <button
+                  onClick={async () => {
+                    await saveToNotion(messages[0].content);
+                  }}
+                >
+                  Save To Notion
+                </button>
+              </div>
+            ))}
+
+          {/* <form onSubmit={handleSubmit} className="flex gap-2">
+            <input
+              className="text-black"
+              value={input}
+              onChange={handleInputChange}
+            />
+            <button type="submit">Send</button>
+          </form> */}
+        </div>
       </main>
     </>
   );

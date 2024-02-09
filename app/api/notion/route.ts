@@ -3,13 +3,11 @@ import { Client } from "@notionhq/client";
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 export async function POST(req: Request) {
-  const json = await req.json();
-  const { company, briefBot, swotAnalysis, images } = json;
+  const { images, company, briefBot } = await req.json();
 
+  console.log("### images", images);
   console.log("### company", company);
   console.log("### briefBot", briefBot);
-  console.log("### swotAnalysis", swotAnalysis);
-  console.log("### images", images);
 
   const response = await notion.pages.create({
     parent: {
@@ -54,30 +52,6 @@ export async function POST(req: Request) {
             {
               text: {
                 content: briefBot.slice(0, 2000),
-              },
-            },
-          ],
-        },
-      },
-      {
-        object: "block",
-        heading_2: {
-          rich_text: [
-            {
-              text: {
-                content: "SWOT Analysis",
-              },
-            },
-          ],
-        },
-      },
-      {
-        object: "block",
-        paragraph: {
-          rich_text: [
-            {
-              text: {
-                content: swotAnalysis.slice(0, 2000),
               },
             },
           ],

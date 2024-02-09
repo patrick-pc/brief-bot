@@ -1,8 +1,7 @@
 import { Leap } from "@leap-ai/workflows";
 
 export async function POST(req: Request) {
-  const json = await req.json();
-  const { url, painPoints } = json;
+  const { url, painPoints } = await req.json();
 
   console.log("### url", url);
   console.log("### painPoints", painPoints);
@@ -12,7 +11,7 @@ export async function POST(req: Request) {
   });
 
   const response = await leap.workflowRuns.workflow({
-    workflow_id: "wkf_V0bVVBLlkDceWi",
+    workflow_id: "wkf_LTnKcmEfE06llV",
     input: {
       url,
       pain_points: painPoints
