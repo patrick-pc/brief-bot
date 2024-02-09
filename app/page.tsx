@@ -148,58 +148,60 @@ ${painPoints}`,
       </header>
 
       <main className="flex flex-col items-center justify-between px-6 py-24">
-        <div className="w-full max-w-xl flex flex-col items-center justify-center gap-4">
-          <input
-            type="text"
-            className="flex h-9 w-full rounded-md border border-zinc-800 border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder="URL"
-            value={url}
-            onChange={(event) => setUrl(event.target.value)}
-          />
-          <input
-            type="text"
-            className="flex h-9 w-full rounded-md border border-zinc-800 border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder="Pain Points"
-            value={painPoints}
-            onChange={(event) => setPainPoints(event.target.value)}
-          />
+        {!image && (
+          <div className="w-full max-w-xl flex flex-col items-center justify-center gap-4">
+            <input
+              type="text"
+              className="flex h-9 w-full rounded-md border border-zinc-800 border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              placeholder="URL"
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+            />
+            <input
+              type="text"
+              className="flex h-9 w-full rounded-md border border-zinc-800 border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              placeholder="Pain Points"
+              value={painPoints}
+              onChange={(event) => setPainPoints(event.target.value)}
+            />
 
-          <button
-            className="flex h-9 w-full rounded-md bg-zinc-700 items-center justify-center text-zinc-100 font-medium disabled:bg-zinc-800 disabled:cursor-not-allowed"
-            onClick={generateReport}
-            disabled={loading || !url}
-          >
-            {loading ? (
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 38 38"
-                xmlns="http://www.w3.org/2000/svg"
-                stroke="#fff"
-              >
-                <g fill="none" fillRule="evenodd">
-                  <g transform="translate(1 1)" strokeWidth="2">
-                    <circle strokeOpacity=".5" cx="18" cy="18" r="18" />
-                    <path d="M36 18c0-9.94-8.06-18-18-18">
-                      <animateTransform
-                        attributeName="transform"
-                        type="rotate"
-                        from="0 18 18"
-                        to="360 18 18"
-                        dur="1s"
-                        repeatCount="indefinite"
-                      />
-                    </path>
+            <button
+              className="flex h-9 w-full rounded-md bg-zinc-700 items-center justify-center text-zinc-100 font-medium disabled:bg-zinc-800 disabled:cursor-not-allowed"
+              onClick={generateReport}
+              disabled={loading || !url}
+            >
+              {loading ? (
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 38 38"
+                  xmlns="http://www.w3.org/2000/svg"
+                  stroke="#fff"
+                >
+                  <g fill="none" fillRule="evenodd">
+                    <g transform="translate(1 1)" strokeWidth="2">
+                      <circle strokeOpacity=".5" cx="18" cy="18" r="18" />
+                      <path d="M36 18c0-9.94-8.06-18-18-18">
+                        <animateTransform
+                          attributeName="transform"
+                          type="rotate"
+                          from="0 18 18"
+                          to="360 18 18"
+                          dur="1s"
+                          repeatCount="indefinite"
+                        />
+                      </path>
+                    </g>
                   </g>
-                </g>
-              </svg>
-            ) : (
-              "Generate Brief"
-            )}
-          </button>
-        </div>
+                </svg>
+              ) : (
+                "Generate Brief"
+              )}
+            </button>
+          </div>
+        )}
 
-        <div className="flex flex-col items-center justify-center gap-8 pt-16">
+        <div className="flex flex-col items-center justify-center gap-8">
           {image && (
             <img
               src={image}
@@ -214,25 +216,8 @@ ${painPoints}`,
                 <ReactMarkdown className="space-y-6 break-words">
                   {m.content}
                 </ReactMarkdown>
-
-                {/* <button
-                  onClick={async () => {
-                    await saveToNotion(messages[0].content);
-                  }}
-                >
-                  Save To Notion
-                </button> */}
               </div>
             ))}
-
-          {/* <form onSubmit={handleSubmit} className="flex gap-2">
-            <input
-              className="text-black"
-              value={input}
-              onChange={handleInputChange}
-            />
-            <button type="submit">Send</button>
-          </form> */}
         </div>
       </main>
     </>
