@@ -1,5 +1,6 @@
 {
   "name": "workflow-interface",
+  "description": "project discovery brief bot",
   "version": "0.1.0",
   "private": true,
   "scripts": {
